@@ -1,0 +1,19 @@
+18:04:22 **** Incremental Build of configuration Debug for project bb_v001 ****
+make -j12 all 
+arm-none-eabi-gcc -o "bb_v001.elf" @"objects.list"   -mcpu=cortex-m3 -T"C:\Ball-and-beam\STM32 Projects\bb_v001\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="bb_v001.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: bb_v001.elf
+ 
+arm-none-eabi-size  bb_v001.elf 
+arm-none-eabi-objdump -h -S bb_v001.elf  > "bb_v001.list"
+   text	   data	    bss	    dec	    hex	filename
+  22980	    108	   3124	  26212	   6664	bb_v001.elf
+arm-none-eabi-objcopy  -O ihex bb_v001.elf  "bb_v001.hex"
+Finished building: default.size.stdout
+ 
+Finished building: bb_v001.list
+ 
+Finished building: bb_v001.hex
+ 
+
+18:04:23 Build Finished. 0 errors, 0 warnings. (took 700ms)
+
