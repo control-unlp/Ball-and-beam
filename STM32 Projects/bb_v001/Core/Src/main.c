@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "fonts.h"
 #include "ssd1306.h"
+#include "ultrasonic.h"
 #include "stdio.h"
 /* USER CODE END Includes */
 
@@ -36,10 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TRIG_PIN GPIO_PIN_3
-#define TRIG_PORT GPIOA
-#define ECHO_PIN GPIO_PIN_4
-#define ECHO_PORT GPIOA
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -50,11 +48,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint32_t pMillis;
-uint32_t val1 = 0;
-uint32_t val2 = 0;
-uint16_t distance  = 0;
-char string[15];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -98,8 +92,18 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C1_Init();
-  MX_TIM1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  SSD1306_Init();
+
+  Ultrasonic_Init();
+
+  SSD1306_GotoXY (20, 0);
+  SSD1306_Puts ("B&B", &Font_11x18, 1);
+  SSD1306_UpdateScreen();
+  HAL_Delay(1500);
+
+  char string[15];
 
   /* USER CODE END 2 */
 
@@ -107,28 +111,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_SET);
-	__HAL_TIM_SET_COUNTER(&htim1, 0);
-	while (__HAL_TIM_GET_COUNTER (&htim1) < 10);  // wait for 10 us
-	HAL_GPIO_WritePin(TRIG_PORT, TRIG_PIN, GPIO_PIN_RESET);
-
-	pMillis = HAL_GetTick();
-	while (!(HAL_GPIO_ReadPin (ECHO_PORT, ECHO_PIN)) && pMillis + 10 >  HAL_GetTick());
-	val1 = __HAL_TIM_GET_COUNTER (&htim1);
-
-	pMillis = HAL_GetTick();
-	while ((HAL_GPIO_ReadPin (ECHO_PORT, ECHO_PIN)) && pMillis + 50 > HAL_GetTick());
-	val2 = __HAL_TIM_GET_COUNTER (&htim1);
-
-	distance = (val2-val1)* 0.034/2;
-
-	SSD1306_GotoXY (20, 0);
-	SSD1306_Puts ("Distance", &Font_11x18, 1);
-	sprintf(string,"%d    ", distance);
-	SSD1306_GotoXY (55, 30);
-	SSD1306_Puts (string, &Font_16x26, 1);
-	SSD1306_UpdateScreen();
-	HAL_Delay(50);
+	  uint16_t dist = Ultrasonic_Read();
+	  SSD1306_GotoXY (20, 0);
+	  SSD1306_Puts ("Distance", &Font_11x18, 1);
+	  sprintf(string,"%d    ", dist);
+	  SSD1306_GotoXY (55, 30);
+	  SSD1306_Puts (string, &Font_16x26, 1);
+	  SSD1306_UpdateScreen();
+	  HAL_Delay(50);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
