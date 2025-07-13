@@ -14,7 +14,7 @@ const int potN = A2;
 Servo myServo;
 
 // Setpoint
-const float y_ref = 10; // cm
+const float y_ref = 17.6; // cm
 
 // PID variables
 float error = 0;
@@ -72,8 +72,7 @@ void loop() {
   float control = Kp * error + Ki * integral + Kd * deriv + Kn * deriv2;
 
   // Mapear control a ángulo de servo
-  // Suponemos que el ángulo debe estar entre 60 y 120 grados
-  int servoAngle = constrain(mapFloat(control, -20, 20, 120, 60), 60, 120);
+  int servoAngle = constrain(mapFloat(control, -20, 20, 75, 170), 75, 170);
   myServo.write(servoAngle);
 
   // Guardar errores previos
