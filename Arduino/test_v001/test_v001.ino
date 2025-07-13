@@ -1,14 +1,19 @@
 #include <Servo.h>
+#include <NewPing.h>
 
 // Pines
 const int trigPin = 6;
 const int echoPin = 5;
 const int servoPin = 7;
+const int maxDist = 50;
 
 const int potP = A5;
 const int potI = A4;
 const int potD = A3;
 const int potN = A2;
+
+// Sonar
+NewPing sonar(trigPin, echoPin, maxDist);
 
 // Servo
 Servo myServo;
@@ -57,7 +62,7 @@ void loop() {
   float distance = readUltrasonic();
 
   // Calcular error
-  error = y_ref - distance;
+  error = +y_ref - distance;
 
   // Integral
   integral += error * dt;
@@ -93,14 +98,15 @@ void loop() {
 
 // Función para medir distancia con ultrasónico
 float readUltrasonic() {
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  long duration = pulseIn(echoPin, HIGH, 30000); // 30 ms timeout
-  float distanceCm = duration * 0.0343 / 2;
-  return distanceCm;
+  delay(40);                                                            
+  long distance;
+  distance = sonar.convert_cm(sonar.ping_median(5));
+  
+  if(distance > 40){     // 40 cm is the maximum position for the ball
+    distance = 40;
+  }
+
+  return distance;    
 }
 
 // Mapear flotante
