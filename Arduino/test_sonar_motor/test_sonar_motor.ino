@@ -40,8 +40,8 @@ void loop() {
 
 float readUltrasonic() {
   delay(40);                                                            
-  long distance;
-  distance = sonar.convert_cm(sonar.ping_median(5));
+  float distance;
+  distance = sonar.ping_cm();
   
   if(distance > 40){     // 40 cm is the maximum position for the ball
     distance = 40;
