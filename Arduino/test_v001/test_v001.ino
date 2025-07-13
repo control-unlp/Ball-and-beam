@@ -75,7 +75,8 @@ void loop() {
 
   // PID+N
   float control = Kp * error + Ki * integral + Kd * deriv + Kn * deriv2;
-
+  control = -control;
+  
   // Mapear control a ángulo de servo
   int servoAngle = constrain(mapFloat(control, -20, 20, 75, 170), 75, 170);
   myServo.write(servoAngle);
@@ -93,7 +94,7 @@ void loop() {
   Serial.print(" | Control: "); Serial.print(control, 2);
   Serial.print(" | Servo: "); Serial.println(servoAngle);
 
-  delay(50);
+  delay(200);
 }
 
 // Función para medir distancia con ultrasónico
