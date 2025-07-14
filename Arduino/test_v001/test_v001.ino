@@ -53,7 +53,7 @@ void loop() {
   lastTime = currentTime;
 
   // Leer potenciómetros y mapear
-  Kp = analogRead(potP) / 1023.0 * 10.0; // 0 - 10
+  Kp = analogRead(potP) / 1023.0 * 2; // 0 - 10
   Ki = analogRead(potI) / 1023.0 * 5.0;  // 0 - 5
   Kd = analogRead(potD) / 1023.0 * 5.0;  // 0 - 5
   Kn = analogRead(potN) / 1023.0 * 2.0;  // 0 - 2
@@ -94,7 +94,7 @@ void loop() {
   Serial.print(" | Control: "); Serial.print(control, 2);
   Serial.print(" | Servo: "); Serial.println(servoAngle);
 
-  delay(200);
+  delay(60);
 }
 
 // Función para medir distancia con ultrasónico
