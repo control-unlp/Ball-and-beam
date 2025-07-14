@@ -16,7 +16,7 @@ const int KdPin = A3;
 
 // Parámetros físicos
 const float largo_riel = 35.2; // cm
-const float ref = largo_riel/2;
+const float ref = 6;
 
 // Velocidad del sonido
 const float vel_sonido = 0.034; // cm/us
@@ -35,8 +35,8 @@ unsigned long t_previo = 0;
 float dt ;
 
 //Angulo servo
-const int angulo_min = 70;
-const int angulo_max = 110;
+const int angulo_min = 50;
+const int angulo_max = 170;
 
 void setup() {
   Serial.begin(9600);
@@ -72,6 +72,7 @@ void loop() {
   integral += error * dt;
   derivada = (error - error_previo)/dt;
   control = Kp*error + Ki*integral + Kd*derivada;
+  control = -control;
 
   error_previo = error;
   
