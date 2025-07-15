@@ -15,7 +15,7 @@ const int kiPin = A4;
 const int kdPin = A3;
 
 // Setpoint deseado (en cm)
-const float setpoint = 14;
+const float setpoint = 15;
 
 Servo servoMotor;
 
