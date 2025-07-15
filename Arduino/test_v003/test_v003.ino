@@ -17,6 +17,11 @@ const int kdPin = A3;
 // Setpoint deseado (en cm)
 const float setpoint = 16;
 
+// Global
+static float medidaFiltrada = 0;
+static float outputFiltrado = 0;
+static float ultimoAngulo = 90;
+
 Servo servoMotor;
 
 void setup() {
@@ -43,24 +48,30 @@ void loop() {
   }
 
   float medida = suma / repeticiones;
-
-  //lastDistance = medida;
+  medidaFiltrada = 0.9 * medidaFiltrada + 0.1 * medida;
 
   float Kp = analogRead(kpPin) / 1023.0 * 6.0;   // Escalar 0–10
   float Ki = analogRead(kiPin) / 1023.0 * 4.0;    // Escalar 0–1
   float Kd = analogRead(kdPin) / 1023.0 * 4.0;    // Escalar 0–1
 
-  // Calcular PID (modo 0 = PID propio)
-  float output = calcularPID(Kp, Ki, Kd, medida, setpoint, 0);
+  int anguloMotor = mapPIDtoAngle(outputFiltrado);
 
-  int anguloMotor = mapPIDtoAngle(output);
+  // Limitar la rampa
+  float maxDelta = 2.0;
+  if (anguloMotor > ultimoAngulo + maxDelta) {
+    anguloMotor = ultimoAngulo + maxDelta;
+  } else if (anguloMotor < ultimoAngulo - maxDelta) {
+    anguloMotor = ultimoAngulo - maxDelta;
+  }
+
+  ultimoAngulo = anguloMotor;
+
   servoMotor.write(anguloMotor);
-
   // Mostrar resultados
   Serial.print("Distancia: ");
   Serial.print(medida);
   Serial.print(" cm  |  PID Output: ");
-  Serial.print(output);
+  Serial.print(outputFiltrado);
   Serial.print("  |  Kp=");
   Serial.print(Kp, 2);
   Serial.print(" Ki=");
