@@ -13,20 +13,22 @@ r = 0.014;
 G = g / (1 + (2/5)*(R/r)^2);
 G = G * (1/s^2);
 
-%% 
+%% Relación de ángulo
 
 a = 0.04; % distancia de centro a biela
 b = 0.15; % largo de biela
 c = 0.08; % dist entre pivot y biela
 h = 0.15; % distancia vertical centro de giro y pivot
+y = c-a; % distancia horizontal entre ejes de giros
 
-% x = linspace(-40, 40, 1) * pi/180;
-x = 0;
+x = linspace(-20, 20, 80) * pi/180;
+% x = 0;
 
-r   = sqrt( (h - c*sin(x)).^2 + (c*cos(x).^2) );
+r   = sqrt( (h - c*sin(x)).^2 + (c*cos(x) - y).^2 );
 phi = acos( (a^2 + r.^2 - b^2)./ (2*a*r));
-gam = acos( c*cos(x)./r);
+gam = acos( (c*cos(x) - y )./r);
 
 theta = -(pi/2) + gam + phi;
 
-plot(x, theta); grid on
+disp(theta*180/pi)
+plot(x*180/pi, theta*180/pi); grid on
