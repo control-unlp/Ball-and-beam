@@ -15,7 +15,7 @@ const int kiPin = A4;
 const int kdPin = A3;
 
 // Setpoint deseado (en cm)
-const float setpoint = 15;
+const float setpoint = 16;
 
 Servo servoMotor;
 
@@ -28,20 +28,27 @@ void setup() {
 }
 
 void loop() {
+ static float lastDistance = 0;
 
+  const int repeticiones = 5;
   float suma = 0;
-  int repeticiones = 5;
+
   for (int i = 0; i < repeticiones; i++) {
-    float d = medirUltrasonico(trigPin, echoPin, 0);
-    suma += d * 0.034 / 2;
+    float distancia = medirUltrasonico(trigPin, echoPin, 0); // ya en cm
+    //if (abs(distancia - lastDistance) > 15) {
+    //  distancia = lastDistance;
+    //}
+    suma += distancia;
     delay(20);
   }
 
-  float medida = suma *100 / repeticiones;
+  float medida = suma / repeticiones;
 
-  float Kp = analogRead(kpPin) / 1023.0 * 10.0;   // Escalar 0–10
-  float Ki = analogRead(kiPin) / 1023.0 * 3.0;    // Escalar 0–1
-  float Kd = analogRead(kdPin) / 1023.0 * 3.0;    // Escalar 0–1
+  //lastDistance = medida;
+
+  float Kp = analogRead(kpPin) / 1023.0 * 6.0;   // Escalar 0–10
+  float Ki = analogRead(kiPin) / 1023.0 * 4.0;    // Escalar 0–1
+  float Kd = analogRead(kdPin) / 1023.0 * 4.0;    // Escalar 0–1
 
   // Calcular PID (modo 0 = PID propio)
   float output = calcularPID(Kp, Ki, Kd, medida, setpoint, 0);
@@ -61,7 +68,7 @@ void loop() {
   Serial.print(" Kd=");
   Serial.println(Kd, 2);
 
-  delay(200);
+  delay(500);
 }
 
 int mapPIDtoAngle(float pidOutput) {
