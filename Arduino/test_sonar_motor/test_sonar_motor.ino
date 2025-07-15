@@ -34,18 +34,32 @@ void loop() {
   myServo.write(angle);
 
   float distance = readUltrasonic();
-  Serial.print("Distancia: "); Serial.print(distance); Serial.print(" cm\n");
+  //Serial.print("Distancia: "); Serial.print(distance); Serial.print(" cm\n");
+  Serial.print(distance);; Serial.print("\n");
 
 }
 
 float readUltrasonic() {
-  delay(40);                                                            
-  float distance;
-  distance = sonar.ping_cm();
-  
-  if(distance > 40){     // 40 cm is the maximum position for the ball
+  static float lastDistance = 0;  // Guarda la última medición válida
+
+  delay(40);
+  float distance = sonar.ping_cm();
+
+  // Límite superior
+  if (distance > 40) {
     distance = 40;
   }
 
-  return distance;    
+  // Si la lectura es 0 (sin respuesta del sensor), podés decidir ignorarla
+  if (distance == 0) {
+    return lastDistance;
+  }
+
+  // Filtrado: si el cambio es mayor a 10 cm, ignora y retorna la anterior
+  if (abs(distance - lastDistance) > 10) {
+    return lastDistance;
+  }
+  
+  lastDistance = distance;
+  return distance;
 }
