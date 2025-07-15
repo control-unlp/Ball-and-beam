@@ -1,5 +1,5 @@
 #include <Servo.h>
-
+#include <NewPing.h>
 
 // Pines del sensor ultrasónico
 const int trig = 6;
@@ -35,8 +35,10 @@ unsigned long t_previo = 0;
 float dt ;
 
 //Angulo servo
-const int angulo_min = 50;
-const int angulo_max = 170;
+const int angulo_min = 70;
+const int angulo_max = 150;
+
+NewPing sonar(trig, echo, 50);
 
 void setup() {
   Serial.begin(9600);
@@ -48,7 +50,7 @@ void setup() {
   servoMotor.attach(servoPin);
   servoMotor.write(90);
 
-  delay(200); // tiempo para estabilizar
+  delay(100); // tiempo para estabilizar
 }
 
 void loop() {
@@ -58,7 +60,7 @@ void loop() {
   t_previo = t;
 
   // Leer distancia
-  float posicion = medirDistancia(trig, echo);
+  float posicion = readUltrasonic();
 
   // Leer potenciometro
   Kp = analogRead(KpPin) / 1023.0 * Kp_max; 
@@ -92,17 +94,27 @@ void loop() {
 }
 
 // Función para medir la distancia con un sensor ultrasónico
-float medirDistancia(int trigPin, int echoPin) {
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
+float readUltrasonic() {
+  static float lastDistance = 0;  // Guarda la última medición válida
 
-  long duracion = pulseIn(echoPin, HIGH);
+  delay(40);
+  float distance = sonar.ping_cm();
+
+  // Límite superior
+  if (distance > 40) {
+    distance = 40;
+  }
+
+  // Si la lectura es 0 (sin respuesta del sensor), podés decidir ignorarla
+  if (distance == 0) {
+    return lastDistance;
+  }
+
+  // Filtrado: si el cambio es mayor a 10 cm, ignora y retorna la anterior
+  if (abs(distance - lastDistance) > 10) {
+    return lastDistance;
+  }
   
-  float distancia = (duracion * vel_sonido) / 2.0;
-  return distancia;
+  lastDistance = distance;
+  return distance;
 }
-
