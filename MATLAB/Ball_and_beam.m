@@ -91,6 +91,18 @@ title('Sensibilidades del lazo cerrado')
 legend('T', 'S');
 grid on
 
+%% Discretizo el control
+
+%% Trayectoria Digital
+
+ts_th = 0.4;
+
+opts = c2dOptions('Method','tustin','PrewarpFreq',0.8*wt);
+Kd   = c2d(K, ts_th, opts, wt)
+
+[num, den] = tfdata(Kd, 'v');
+disp('Numerador:'); disp(num)
+disp('Denominador:'); disp(den)
 
 %% Mapeo no lineal alpha -> theta   
 
