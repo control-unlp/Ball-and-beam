@@ -10,8 +10,25 @@ s = tf([1 0], 1);
 R = 0.02;
 r = 0.014;
 
+% Planta
 G = g / (1 + (2/5)*(R/r)^2);
 G = G * (1/s^2);
+
+% Parametros del PD
+phi  = 0.5;
+beta = 8;
+K    = (s + phi)/(s+ beta);
+
+% Lazos
+LA = K*G;
+LC = LA/(1+LA);
+
+figure(1)
+pzmap(LC); grid on
+figure(2)
+bode(LC); grid on
+figure(3)
+step(LC); grid on
 
 %% Relación de ángulo
 
