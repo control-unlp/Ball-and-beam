@@ -20,10 +20,32 @@ G = G * (0.0233/s^2);   % r en funcion de theta (no de alpha)
 
 %% Control PD con filtro en derivada
 
-phi  = 0.5;   % [rad/s] cero del controlador
-beta = 10;     % [rad/s] polo del filtro derivativo
+% phi  = 0.5;   % [rad/s] cero del controlador
+% beta = 10;     % [rad/s] polo del filtro derivativo
+% 
+% K = (s + phi)/(s + beta);
 
-K = (s + phi)/(s + beta);
+wt  = (1/15)*2*pi;   
+eta = 0.7071;
+
+% Parametrizacion alfin anda(?
+p0 = -wt;
+p1 = -wt*cos(eta) + wt*sin(eta)*1i;
+p2 = -wt*cos(eta) - wt*sin(eta)*1i;
+
+% Armo el polinomio denominador
+Den = conv(poly(p1),poly(p2));
+Den = Den(1)*s^2 + Den(2)*s + Den(3);
+Den = Den * (s-p0);
+De  = cell2mat(Den.Numerator);
+a0  =  De(3)*s + De(4);
+
+% Funcion Fq Final
+Fq = (a0)/(Den);
+
+% Control
+K  = (Fq/(1-Fq)) * (1/G);
+K  =  minreal(K, 0.1)
 
 %% Lazos de control
 
