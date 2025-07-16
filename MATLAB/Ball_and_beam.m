@@ -1,50 +1,99 @@
 %-------------------------------------------------------------------------%
-%----------------------- Proyecto ball and beam --------------------------%
-%-------------------------------- UNLP -----------------------------------%
+% ----------------------- Proyecto Ball and Beam ------------------------ %
+% --------------------------- UNLP - Control PD ------------------------- %
+%-------------------------------------------------------------------------%
 
-clc; clear
-%% Datos y funcion de transferencia
+clc; clear; close all
 
-g = 9.81;
-s = tf([1 0], 1);
-R = 0.02;
-r = 0.014;
+%% Datos y función de transferencia
 
-% Planta
-G = g / (1 + (2/5)*(R/r)^2);
-G = G * (1/s^2);
+m = 0.111;
+g = 9.81;            
+R = 0.02;            
+r = 0.014;           
+J = 9.99e-6;
 
-% Parametros del PD
-phi  = 0.5;
-beta = 8;
-K    = (s + phi)/(s+ beta);
+s = tf('s');
 
-% Lazos
-LA = K*G;
-LC = LA/(1+LA);
+G = (m*g)/((J/R^2+m));
+G = G * (0.0233/s^2);   % r en funcion de theta (no de alpha)
+
+%% Control PD con filtro en derivada
+
+phi  = 0.5;   % [rad/s] cero del controlador
+beta = 10;     % [rad/s] polo del filtro derivativo
+
+K = (s + phi)/(s + beta);
+
+%% Lazos de control
+
+LA  = K * G;        % Lazo abierto
+S   = 1/(1 + LA);
+T   = LA * S;
+
+%% Respuestas
+
+[y, t1] = step(0.15*T);              % Salida de la planta
+[theta_rad] = step(0.2*K * S, t1);      % Acción de control (theta)
+
+theta_deg = rad2deg(theta_rad) + 120;
+
+%% Gráficos
 
 figure(1)
-pzmap(LC); grid on
-figure(2)
-bode(LC); grid on
+subplot(211)
+plot(t1, y * 100, 'LineWidth', 1.5)
+xlabel('Tiempo [s]')
+ylabel('Distancia [cm]')
+title('Respuesta al escalón - Lazo Cerrado')
+grid on
+
+% Acción de control (theta)
+subplot(212)
+plot(t1, theta_deg, 'LineWidth', 1.5)
+xlabel('Tiempo [s]')
+ylabel('Ángulo de servo \theta [°]')
+title('Acción de control (\theta)')
+grid on
+
+% PZMap lazo cerrado
 figure(3)
-step(LC); grid on
+pzmap(T)
+title('Mapa de polos y ceros de T(s)')
+grid on
 
-%% Relación de ángulo
+% Sensibilidades
+figure(4)
+bode(T); hold on; bode(S)
+title('Sensibilidades del lazo cerrado')
+legend('T', 'S');
+grid on
 
-a = 0.03; % distancia de centro a biela
-b = 0.08; % largo de biela
-c = 0.04; % dist entre pivot y biela
-h = 0.08; % distancia vertical centro de giro y pivot
-y = c -a; % distancia horizontal entre ejes de giros
 
-x = linspace(-40, 40, 80) * pi/180;
-% x = 0;
+%% Mapeo no lineal alpha -> theta   
 
-r   = sqrt( (h - c*sin(x)).^2 + (c*cos(x) - y).^2 );
-phi = acos( (a^2 + r.^2 - b^2)./ (2*a*r) );
-gam = asin( (c*cos(x) - y )./r);
+% alp = linspace(-40, 40, 60);
+% aprox = 0.0233 * alp;
+% plot(alp, alpha2theta(alp), 'b', alp, aprox, 'r'); 
+% grid on
 
-theta = -(pi/2) + gam + phi;
+function theta_rad = alpha2theta(alpha_deg)
 
-plot(x*180/pi, theta*180/pi); grid on
+    alpha_rad = deg2rad(alpha_deg);
+
+    % Geometría del sistema (en metros)
+    a = 0.03;    % [m]
+    b = 0.08;    % [m]
+    c = 0.04;    % [m]
+    h = 0.08;    % [m]
+    y = c - a;   % [m]
+
+    % Calculo de variables intermedias
+    r = sqrt( (h - c*sin(alpha_rad)).^2 + (c*cos(alpha_rad) - y).^2 );
+    phi = acos( (a^2 + r.^2 - b^2) ./ (2*a*r) );
+    gamma = asin( (c*cos(alpha_rad) - y) ./ r );
+
+    % Ángulo absoluto del motor en radianes
+    theta_rad = -(pi/2) + gamma + phi;
+
+end
