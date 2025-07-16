@@ -8,7 +8,7 @@ const int servoPin = 7;
 const int maxDist = 50;
 
 const int potPin = A5;
-const int motorPin = 7;
+const int motorPin = 9;
 
 // Sonar
 NewPing sonar(trigPin, echoPin, maxDist);
@@ -19,8 +19,8 @@ Servo myServo;
 void setup() {
   Serial.begin(9600);
   myServo.attach(motorPin);
-//  pinMode(trigPin, OUTPUT);
-//  pinMode(echoPin, INPUT);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
 
   Serial.println("Ball and Beam PID+N Control");
 }
@@ -33,7 +33,7 @@ void loop() {
   // Mover el servo
   myServo.write(angle);
 
-  float distance = readUltrasonic();
+  float distance = readUltrasonic2();
   //Serial.print("Distancia: "); Serial.print(distance); Serial.print(" cm\n");
   Serial.print(distance);; Serial.print("\n");
 
@@ -61,5 +61,12 @@ float readUltrasonic() {
   }
   
   lastDistance = distance;
+  return distance;
+}
+
+float readUltrasonic2() {
+
+  float ms = sonar.ping_median(5 , 35);
+  float distance = sonar.convert_cm(ms);
   return distance;
 }
