@@ -20,9 +20,9 @@ Servo servoMotor;
 
 // ----------------- CONTROL ----------------------------
 
-const float Ts = 0.4;           // Tiempo de muestreo 
+const float Ts = 0.5;           // Tiempo de muestreo 
 
-float a[2] = {7.171, - 6.737}; 
+float a[2] = {1.147, - 1.078}; 
 
 float b[2] = {1.0, - 0.6691};       
 
@@ -58,7 +58,7 @@ void loop() {
     // Error actual
     float e0 = referencia_cm - medida_cm;
     e0 = -e0;
-    
+
     // --------------------------
     // ECUACIÓN EN DIFERENCIAS
     // --------------------------
