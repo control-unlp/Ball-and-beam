@@ -22,9 +22,9 @@ Servo servoMotor;
 
 const float Ts = 0.4;           // Tiempo de muestreo 
 
-float a[2] = {2.0215, -1.8913}; 
+float a[2] = {7.171, - 6.737}; 
 
-float b[2] = {1.0, -0.6509};       
+float b[2] = {1.0, - 0.6691};       
 
 unsigned long lastTime = 0;     // Tiempo 
 float referencia_cm = 16.0;     // Referencia 
@@ -34,9 +34,9 @@ float u_hist[1] = {0};          // u[k-i]
 
 // ----------------- MOTOR -----------------------------
 
-const float Offset = 120.0;     // Punto medio
+const float Offset = 110.0;     // Punto medio
 
-const float servoMin = 75.0;    // Mínimo
+const float servoMin = 66.0;    // Mínimo
 const float servoMax = 170.0;   // Máximo
 
 void setup() {
@@ -57,7 +57,8 @@ void loop() {
 
     // Error actual
     float e0 = referencia_cm - medida_cm;
-
+    e0 = -e0;
+    
     // --------------------------
     // ECUACIÓN EN DIFERENCIAS
     // --------------------------
