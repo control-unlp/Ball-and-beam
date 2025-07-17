@@ -35,8 +35,8 @@ void loop() {
 
   float distance = readUltrasonic2();
   //Serial.print("Distancia: "); Serial.print(distance); Serial.print(" cm\n");
-  //Serial.print(distance);; Serial.print("\n");
-  Serial.print(angle);; Serial.print("\n");
+  Serial.print(distance);; Serial.print("\n");
+  //Serial.print(angle);; Serial.print("\n");
 
 }
 
@@ -67,7 +67,7 @@ float readUltrasonic() {
 
 float readUltrasonic2() {
 
-  float ms = sonar.ping_median(5 , 35);
+  float ms = sonar.ping_median(5 , 500);
   float distance = sonar.convert_cm(ms);
   return distance;
 }
