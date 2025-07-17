@@ -28,14 +28,15 @@ void setup() {
 void loop() {
 
   int potValue = analogRead(potPin); 
-  int angle = map(potValue, 0, 1023, 75, 170);
+  int angle = map(potValue, 0, 1023, 50, 170);
 
   // Mover el servo
   myServo.write(angle);
 
   float distance = readUltrasonic2();
   //Serial.print("Distancia: "); Serial.print(distance); Serial.print(" cm\n");
-  Serial.print(distance);; Serial.print("\n");
+  //Serial.print(distance);; Serial.print("\n");
+  Serial.print(angle);; Serial.print("\n");
 
 }
 
