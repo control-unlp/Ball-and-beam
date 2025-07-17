@@ -100,10 +100,10 @@ Kd   = c2d(K, ts, opts, wt)
 
 %% Mapeo no lineal alpha -> theta   
 
-% alp = linspace(-40, 40, 60);
-% aprox = 0.0233 * alp;
-% plot(alp, alpha2theta(alp), 'b', alp, aprox, 'r'); 
-% grid on
+alp = linspace(-40, 40, 60);
+aprox = 0.0233 * alp;
+plot(alp, alpha2theta(alp), 'b', alp, aprox, 'r'); 
+grid on
 
 function theta_rad = alpha2theta(alpha_deg)
 
