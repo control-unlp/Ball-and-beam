@@ -25,7 +25,7 @@ G = G * (0.0233/s^2);   % r en funcion de theta (no de alpha)
 % 
 % K = (s + phi)/(s + beta);
 
-wt  = (1/15)*2*pi;   
+wt  = (1/8)*2*pi;   
 eta = 0.7071;
 
 % Parametrizacion alfin anda(?
@@ -91,6 +91,12 @@ title('Sensibilidades del lazo cerrado')
 legend('T', 'S');
 grid on
 
+%% Control discreto
+
+ts = 0.2;
+
+opts = c2dOptions('Method', 'tustin', 'PrewarpFreq', 0.8*wt);
+Kd   = c2d(K, ts, opts, wt)
 
 %% Mapeo no lineal alpha -> theta   
 
