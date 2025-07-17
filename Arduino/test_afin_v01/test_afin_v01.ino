@@ -57,7 +57,7 @@ void loop() {
 
     // Error actual
     float e0 = referencia_cm - medida_cm;
-    e0 = -e0;
+    //e0 = -e0;
 
     // --------------------------
     // ECUACIÓN EN DIFERENCIAS
@@ -93,6 +93,8 @@ void loop() {
     Serial.print(e0);
     Serial.print(" | Theta: ");
     Serial.println(theta_deg);
+    Serial.print(" | u0: ");
+    Serial.println(u0);
   }
 }
 
