@@ -7,112 +7,86 @@
 
 #include <Arduino.h>
 #include <Servo.h>
-#include "control.h"
-#include "sensor.h"
+#include <PID_v1.h>
+#include "sensor.h"  // Tu librería ya funcional
 
-// ------------- CONFIGURACIÓN ---------------------------
-#define CONTROL_MODE CONTROL_PIDN   // o CONTROL_DISCRETO
-
-// Servo
+// ------------------- Servo -------------------
 Servo servoMotor;
 const int pinServo = 9;
-
-// Referencia
-const float referencia_cm = 16.0;   // cm
-
-// Muestreo
-const float Ts = 0.4;               // [s]
-unsigned long t_anterior = 0;
-
-// Offset y saturación
-const float Offset = 120.0;         // Punto medio (grados)
+const float Offset = 120.0;   // Punto medio
 const float servoMin = 75.0;
 const float servoMax = 170.0;
 
-#if CONTROL_MODE == CONTROL_DISCRETO
-    const float a[2] = {1.0, -1.8913};
-    const float b[2] = {1.0, -0.6509};
-    ControlState controlState;
+// ------------------- Control -------------------
+double ref = 16.0;     // [cm]
+double input = 0.0;
+double output = 0.0;
 
-#elif CONTROL_MODE == CONTROL_PIDN
-    const int pinKp = A3;
-    const int pinKi = A2;
-    const int pinKd = A1;
-    const int pinN  = A0;
+double Kp = 2.0, Ki = 0.0, Kd = 1.0;
+PID pid(&input, &output, &ref, Kp, Ki, Kd, DIRECT);
 
-    const float maxKp = 5.0;
-    const float maxKi = 1.0;
-    const float maxKd = 2.0;
-    const float maxN  = 20.0;
+// ------------------- Potenciómetros -------------------
+const int pinKp = A3;
+const int pinKi = A2;
+const int pinKd = A1;
 
-    PIDN_Params pidnParams;
-    PIDN_State pidnState;
-#endif
+const float maxKp = 5.0;
+const float maxKi = 1.0;
+const float maxKd = 2.0;
 
+// ------------------- Muestreo -------------------
+const float Ts = 0.4;
+unsigned long t_prev = 0;
 
 void setup() {
     Serial.begin(9600);
-
     servoMotor.attach(pinServo);
 
     if (!iniciarSensor()) {
-        Serial.println("Error: Sensor VL53L0X no detectado.");
+        Serial.println("Sensor no detectado.");
         while (1);
     }
 
-    #if CONTROL_MODE == CONTROL_DISCRETO
-        initControlState(controlState);
-    #elif CONTROL_MODE == CONTROL_PIDN
-        initPIDNState(pidnState);
-    #endif
-
-    t_anterior = millis();
+    pid.SetMode(AUTOMATIC);
+    pid.SetOutputLimits(-45, 45);  // Salida acotada en grados respecto al offset
+    t_prev = millis();
 }
 
 void loop() {
-    unsigned long t_actual = millis();
-    float dt = (t_actual - t_anterior) / 1000.0;
+    unsigned long t_now = millis();
+    if ((t_now - t_prev) < Ts * 1000) return;
+    t_prev = t_now;
 
-    if (dt >= Ts) {
-        t_anterior = t_actual;
-
-        // Leer sensor
-        float distancia = leerDistanciaCM();
-
-        //if (distancia < 0) {
-        //    Serial.println("Lectura inválida del sensor");
-        //    return;
-        //}
-
-        // Calcular control
-        float u0 = 0.0;
-        float error = referencia_cm - distancia;
-
-        #if CONTROL_MODE == CONTROL_DISCRETO
-            u0 = calcularControl(referencia_cm, distancia, a, b, controlState);
-
-        #elif CONTROL_MODE == CONTROL_PIDN
-            pidnParams = leerPIDNDesdePotenciometros(pinKp, pinKi, pinKd, pinN, maxKp, maxKi, maxKd, maxN);
-            u0 = calcularPIDN(referencia_cm, distancia, pidnParams, pidnState);
-        #endif
-
-        // Mapear a ángulo de servo
-        float theta_deg = -u0 + Offset;
-
-        // Saturar
-        if (theta_deg > servoMax) theta_deg = servoMax;
-        if (theta_deg < servoMin) theta_deg = servoMin;
-
-        // Mover servo
-        servoMotor.write(theta_deg);
-
-        // Imprimir datos
-        Serial.print("Error: ");
-        Serial.print(error, 2);
-        Serial.print(" | u: ");
-        Serial.print(theta_deg, 2);
-        Serial.print(" | Distancia: ");
-        Serial.print(distancia, 2);
-        Serial.println(" cm");
+    // Leer distancia
+    float distancia = leerDistanciaCM();
+    if (distancia < 0) {
+        Serial.println("Error en sensor");
+        return;
     }
+
+    // Leer constantes PID
+    Kp = analogRead(pinKp) * maxKp / 1023.0;
+    Ki = analogRead(pinKi) * maxKi / 1023.0;
+    Kd = analogRead(pinKd) * maxKd / 1023.0;
+    pid.SetTunings(Kp, Ki, Kd);
+
+    // Actualizar entrada y calcular
+    input = distancia;
+    pid.Compute();
+
+    // Mapear salida a ángulo
+    float theta = output + Offset;
+    if (theta > servoMax) theta = servoMax;
+    if (theta < servoMin) theta = servoMin;
+
+    servoMotor.write(theta);
+
+    // Debug
+    Serial.print("Error: ");
+    Serial.print(ref - input, 2);
+    Serial.print(" | u: ");
+    Serial.print(theta, 2);
+    Serial.print(" | Distancia: ");
+    Serial.print(input, 2);
+    Serial.println(" cm");
 }
