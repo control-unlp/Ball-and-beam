@@ -21,9 +21,9 @@ const float servoMax = 170.0;
 VL53L0X sensor;
 
 // ------------------ PID ------------------
-float Kp = 1.1;                                                   //Initial Proportional Gain 2.05
+float Kp = 0.8;                                                   //Initial Proportional Gain 2.05
 float Ki = 0;                                                      //Initial Integral Gain
-float Kd = 0.4;                                                    //Intitial Derivative Gain 0.85
+float Kd = 0.45;                                                    //Intitial Derivative Gain 0.85
 double Setpoint, Input, Output, ServoOutput;                                       
 
 PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);           //Initialize PID object, which is in the class PID.                                                                   
