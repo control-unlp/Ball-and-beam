@@ -5,88 +5,67 @@
 ----------------------------------------------------------
 */
 
-#include <Arduino.h>
+#include <Wire.h>
+#include <VL53L0X.h>
 #include <Servo.h>
 #include <PID_v1.h>
-#include "sensor.h"  // Tu librería ya funcional
 
-// ------------------- Servo -------------------
+// ------------------ Servo ------------------
 Servo servoMotor;
 const int pinServo = 9;
-const float Offset = 120.0;   // Punto medio
+const float offset = 120.0;
 const float servoMin = 75.0;
 const float servoMax = 170.0;
 
-// ------------------- Control -------------------
-double ref = 16.0;     // [cm]
-double input = 0.0;
-double output = 0.0;
+// ------------------ Sensor ------------------
+VL53L0X sensor;
 
-double Kp = 2.0, Ki = 0.0, Kd = 1.0;
-PID pid(&input, &output, &ref, Kp, Ki, Kd, DIRECT);
+// ------------------ PID ------------------
+float Kp = 1.1;                                                   //Initial Proportional Gain 2.05
+float Ki = 0;                                                      //Initial Integral Gain
+float Kd = 0.4;                                                    //Intitial Derivative Gain 0.85
+double Setpoint, Input, Output, ServoOutput;                                       
 
-// ------------------- Potenciómetros -------------------
-const int pinKp = A3;
-const int pinKi = A2;
-const int pinKd = A1;
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);           //Initialize PID object, which is in the class PID.                                                                   
+Servo myServo;                                                       //Initialize Servo.
 
-const float maxKp = 5.0;
-const float maxKi = 1.0;
-const float maxKd = 2.0;
-
-// ------------------- Muestreo -------------------
-const float Ts = 0.4;
-unsigned long t_prev = 0;
-
+// ------------------ Setup ------------------
 void setup() {
     Serial.begin(9600);
-    servoMotor.attach(pinServo);
+    Wire.begin();
+    sensor.setTimeout(500);
 
-    if (!iniciarSensor()) {
-        Serial.println("Sensor no detectado.");
+    if (!sensor.init()) {
+        Serial.println("Sensor no detectado!");
         while (1);
     }
 
-    pid.SetMode(AUTOMATIC);
-    pid.SetOutputLimits(-45, 45);  // Salida acotada en grados respecto al offset
-    t_prev = millis();
+    sensor.setMeasurementTimingBudget(20000);
+    sensor.startContinuous();
+
+    Input = sensor.readRangeContinuousMillimeters() / 10.0;
+
+    servoMotor.attach(pinServo);
+
+    myPID.SetMode(AUTOMATIC);
+    myPID.SetOutputLimits(-50, 50);  // grados desde el offset
 }
 
+// ------------------ Loop ------------------
 void loop() {
-    unsigned long t_now = millis();
-    if ((t_now - t_prev) < Ts * 1000) return;
-    t_prev = t_now;
 
-    // Leer distancia
-    float distancia = leerDistanciaCM();
-    if (distancia < 0) {
-        Serial.println("Error en sensor");
-        return;
-    }
+    delay(100);
+    Setpoint = 16.5;
+    Input = sensor.readRangeContinuousMillimeters() / 10.0;
 
-    // Leer constantes PID
-    Kp = analogRead(pinKp) * maxKp / 1023.0;
-    Ki = analogRead(pinKi) * maxKi / 1023.0;
-    Kd = analogRead(pinKd) * maxKd / 1023.0;
-    pid.SetTunings(Kp, Ki, Kd);
+    myPID.Compute();                                                   //computes Output in range of -80 to 80 degrees
+  
+    ServoOutput=120-Output;                                            // 102 degrees is my horizontal 
 
-    // Actualizar entrada y calcular
-    input = distancia;
-    pid.Compute();
+    if (ServoOutput > servoMax) ServoOutput = servoMax;
+    if (ServoOutput < servoMin) ServoOutput = servoMin;
+    servoMotor.write(ServoOutput);                                        //Writes value of Output to servo
+    Serial.print("angle: ");
+    Serial.println(ServoOutput);
 
-    // Mapear salida a ángulo
-    float theta = output + Offset;
-    if (theta > servoMax) theta = servoMax;
-    if (theta < servoMin) theta = servoMin;
-
-    servoMotor.write(theta);
-
-    // Debug
-    Serial.print("Error: ");
-    Serial.print(ref - input, 2);
-    Serial.print(" | u: ");
-    Serial.print(theta, 2);
-    Serial.print(" | Distancia: ");
-    Serial.print(input, 2);
-    Serial.println(" cm");
 }
