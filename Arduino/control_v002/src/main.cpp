@@ -9,49 +9,66 @@
 #include <Servo.h>
 #include <Wire.h>
 #include <VL53L0X.h>
+#include <PID_v1.h>
 
 // ------------------------ SERVO ------------------------------
 Servo myservo;      // create servo object to control a servo
 int potpin = 3;     // analog pin used to connect the potentiometer
 int val;            // variable to read the value from the analog pin
+int servoPos = 120; 
+int servoMin = 70; 
+int servoMax = 160; 
 
 // ------------------------ SENSOR ------------------------------
 VL53L0X sensor;
+
+// ------------------------ PID  ------------------------------
+double Setpoint, Input, Output;
+double Kp=0.4, Ki=0, Kd=0.1; 
+double angle = 0;
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);  
 
 void setup() {
     Serial.begin(9600);
     Wire.begin();
 
+    // ------------------------ MOTOR ------------------------------
     myservo.attach(9);  // attaches the servo on pin 9 to the servo object
-    myservo.write(112);   
+    myservo.write(servoPos);   
 
     // ------------------------ SENSOR ------------------------------
     sensor.init();
     sensor.setTimeout(500);
-    //sensor.setMeasurementTimingBudget(20);
 
+    // ------------------------ PID  ------------------------------
+    Setpoint = 16; 
+    myPID.SetMode(AUTOMATIC);
+    myPID.SetOutputLimits(servoMin - servoPos, servoMax - servoPos); // limits the output to the servo
+    myPID.SetSampleTime(200); // sets the sample time to 10 ms
+    myPID.SetTunings(Kp, Ki, Kd); // sets the PID tunings
+
+    delay(6000); // wait for the sensor to initialize
 } 
 
 void loop() {
 
-    val = analogRead(potpin);            // reads the value of the potentiometer (value between 0 and 1023)
-    val = map(val, 0, 1023, 0, 180);     // scale it to use it with the servo (value between 0 and 180)
-    myservo.write(val);                  // sets the servo position according to the scaled value
-    
-    // float DISTANCIA = getDISTANCIA(n_Samples);
+               
     float DISTANCIA = sensor.readRangeSingleMillimeters()/10;
 
-    if (sensor.timeoutOccurred()) {
-        Serial.println(" TIME OUT");
-    }else {
-        if (DISTANCIA< 2) Serial.println("");
-        else if (DISTANCIA>220) Serial.println("");
-        else { 
-            Serial.print(DISTANCIA, 1); // distancia en cm y 1 decimal
-            Serial.println(" cm"); 
-        }
-    }
+    Input = DISTANCIA; // read the distance from the sensor
+    float error = Setpoint - Input; // calculate the error
 
-    delay(10);                                 // waits for the servo to get there
+    myPID.Compute(); // compute the PID output
+    angle = servoPos + Output; // calculate the angle for the servo
+    myservo.write(angle); // write the output to the servo
+
+    Serial.print("Input: ");
+    Serial.print(Input);    
+    Serial.print(" cm, Error: ");    
+    Serial.print(error); // print the error to the serial monitor
+    Serial.print(" cm, Output: ");
+    Serial.println(angle); // print the output to the serial monitor   
+
+    //delay(10);                                 // waits for the servo to get there
 
 }
