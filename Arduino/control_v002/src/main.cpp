@@ -13,9 +13,7 @@
 
 // ------------------------ SERVO ------------------------------
 Servo myservo;      // create servo object to control a servo
-int potpin = 3;     // analog pin used to connect the potentiometer
-int val;            // variable to read the value from the analog pin
-int servoPos = 120; 
+int servoPos = 115; 
 int servoMin = 70; 
 int servoMax = 160; 
 
@@ -24,9 +22,9 @@ VL53L0X sensor;
 
 // ------------------------ PID  ------------------------------
 double Setpoint, Input, Output;
-double Kp=0.4, Ki=0, Kd=0.1; 
+double Kp=0.4, Ki=0, Kd=0.07; 
 double angle = 0;
-PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);  
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, REVERSE);  
 
 void setup() {
     Serial.begin(9600);
@@ -43,8 +41,10 @@ void setup() {
     // ------------------------ PID  ------------------------------
     Setpoint = 16; 
     myPID.SetMode(AUTOMATIC);
+    
     myPID.SetOutputLimits(servoMin - servoPos, servoMax - servoPos); // limits the output to the servo
-    myPID.SetSampleTime(200); // sets the sample time to 10 ms
+    //myPID.SetOutputLimits(servoMax - servoPos, servoMin - servoPos); // limits the output to the servo
+    myPID.SetSampleTime(20); // sets the sample time to 10 ms
     myPID.SetTunings(Kp, Ki, Kd); // sets the PID tunings
 
     delay(6000); // wait for the sensor to initialize
@@ -56,7 +56,7 @@ void loop() {
     float DISTANCIA = sensor.readRangeSingleMillimeters()/10;
 
     Input = DISTANCIA; // read the distance from the sensor
-    float error = Setpoint - Input; // calculate the error
+    float error = Input - Setpoint; // calculate the error
 
     myPID.Compute(); // compute the PID output
     angle = servoPos + Output; // calculate the angle for the servo
@@ -69,6 +69,6 @@ void loop() {
     Serial.print(" cm, Output: ");
     Serial.println(angle); // print the output to the serial monitor   
 
-    //delay(10);                                 // waits for the servo to get there
+    delay(10);                                 // waits for the servo to get there
 
 }
