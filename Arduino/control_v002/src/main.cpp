@@ -28,7 +28,7 @@ void setup() {
     // ------------------------ SENSOR ------------------------------
     sensor.init();
     sensor.setTimeout(500);
-    sensor.setMeasurementTimingBudget(20);
+    //sensor.setMeasurementTimingBudget(20);
 
 } 
 
@@ -42,11 +42,14 @@ void loop() {
     float DISTANCIA = sensor.readRangeSingleMillimeters()/10;
 
     if (sensor.timeoutOccurred()) {
-        Serial.print("TIMEOUT");
-    } else {
-        Serial.print("DISTANCIA: ");
-        Serial.print(DISTANCIA);
-        Serial.println(" cm");
+        Serial.println(" TIME OUT");
+    }else {
+        if (DISTANCIA< 2) Serial.println("");
+        else if (DISTANCIA>220) Serial.println("");
+        else { 
+            Serial.print(DISTANCIA, 1); // distancia en cm y 1 decimal
+            Serial.println(" cm"); 
+        }
     }
 
     delay(10);                                 // waits for the servo to get there
