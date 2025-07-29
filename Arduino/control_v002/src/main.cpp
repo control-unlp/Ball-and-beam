@@ -62,11 +62,10 @@ void loop() {
     angle = servoPos + Output; // calculate the angle for the servo
     myservo.write(angle); // write the output to the servo
 
-    Serial.print("Input: ");
     Serial.print(Input);    
-    Serial.print(" cm, Error: ");    
+    Serial.print(",");    
     Serial.print(error); // print the error to the serial monitor
-    Serial.print(" cm, Output: ");
+    Serial.print(",");
     Serial.println(angle); // print the output to the serial monitor   
 
     delay(10);                                 // waits for the servo to get there
