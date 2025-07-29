@@ -1,10 +1,3 @@
-/*
-----------------------------------------------------------
-  Ball and Beam Control - Controlador Digital Discreto
-                      UNLP          
-----------------------------------------------------------
-*/
-
 #include <Arduino.h>
 #include <Servo.h>
 #include <Wire.h>
@@ -12,62 +5,91 @@
 #include <PID_v1.h>
 
 // ------------------------ SERVO ------------------------------
-Servo myservo;      // create servo object to control a servo
-int servoPos = 115; 
-int servoMin = 70; 
-int servoMax = 160; 
+Servo myservo;
+int servoPos = 115;
+int servoMin = 70;
+int servoMax = 160;
 
 // ------------------------ SENSOR ------------------------------
 VL53L0X sensor;
+const int rangoMin = 0;
+const int rangoMax = 40;
+const int distanciaError = -1;
 
-// ------------------------ PID  ------------------------------
+// ------------------------ PID ------------------------------
 double Setpoint, Input, Output;
-double Kp=0.4, Ki=0, Kd=0.07; 
+double Kp = 0.4, Ki = 0, Kd = 0.07;
 double angle = 0;
-PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, REVERSE);  
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, REVERSE);
+
+// ------------------------ FILTRO (media móvil) ------------------------------
+#define N 3
+float buffer[N];
+int idx = 0;
+bool bufferLleno = false;
+
+float filtrar(float valor) {
+  buffer[idx] = valor;
+  idx = (idx + 1) % N;
+  float suma = 0;
+  int n = bufferLleno ? N : idx;
+  for (int i = 0; i < n; i++) suma += buffer[i];
+  return suma / n;
+}
 
 void setup() {
-    Serial.begin(9600);
-    Wire.begin();
+  Serial.begin(9600);
+  Wire.begin();
 
-    // ------------------------ MOTOR ------------------------------
-    myservo.attach(9);  // attaches the servo on pin 9 to the servo object
-    myservo.write(servoPos);   
+  myservo.attach(9);
+  myservo.write(servoPos);
 
-    // ------------------------ SENSOR ------------------------------
-    sensor.init();
-    sensor.setTimeout(500);
+  sensor.init();
+  sensor.setTimeout(100);
+  sensor.setMeasurementTimingBudget(20000); // más lento pero más preciso
 
-    // ------------------------ PID  ------------------------------
-    Setpoint = 16; 
-    myPID.SetMode(AUTOMATIC);
-    
-    myPID.SetOutputLimits(servoMin - servoPos, servoMax - servoPos); // limits the output to the servo
-    //myPID.SetOutputLimits(servoMax - servoPos, servoMin - servoPos); // limits the output to the servo
-    myPID.SetSampleTime(20); // sets the sample time to 10 ms
-    myPID.SetTunings(Kp, Ki, Kd); // sets the PID tunings
+  Setpoint = 16;
+  myPID.SetMode(AUTOMATIC);
+  myPID.SetOutputLimits(servoMin - servoPos, servoMax - servoPos);
+  myPID.SetSampleTime(20);
+  myPID.SetTunings(Kp, Ki, Kd);
 
-    delay(6000); // wait for the sensor to initialize
-} 
+  delay(3000); // espera de arranque
+}
 
 void loop() {
+  int raw = sensor.readRangeSingleMillimeters();
+  
+  // 1. Detectar errores
+  if (sensor.timeoutOccurred()) {
+    Serial.println("ERROR_TIMEOUT");
+    return;  // salta el ciclo sin mover el servo
+  }
 
-               
-    float DISTANCIA = sensor.readRangeSingleMillimeters()/10;
+  float distancia = raw / 10.0; // en cm
 
-    Input = DISTANCIA; // read the distance from the sensor
-    float error = Input - Setpoint; // calculate the error
+  if (distancia < rangoMin || distancia > rangoMax || raw == 8190) {
+    Serial.println("ERROR_OUT_OF_RANGE");
+    return;
+  }
 
-    myPID.Compute(); // compute the PID output
-    angle = servoPos + Output; // calculate the angle for the servo
-    myservo.write(angle); // write the output to the servo
+  // 2. Filtro simple
+  float distancia_filtrada = filtrar(distancia);
 
-    Serial.print(Input);    
-    Serial.print(",");    
-    Serial.print(error); // print the error to the serial monitor
-    Serial.print(",");
-    Serial.println(angle); // print the output to the serial monitor   
+  // 3. PID
+  Input = distancia_filtrada;
+  float error = Input - Setpoint;
 
-    delay(10);                                 // waits for the servo to get there
+  myPID.Compute();
+  angle = constrain(servoPos + Output, servoMin, servoMax);
+  myservo.write(angle);
 
+  // 4. Log
+  Serial.print(distancia_filtrada);
+  Serial.print(",");
+  Serial.print(error);
+  Serial.print(",");
+  Serial.println(angle);
+
+  delay(10);
 }
